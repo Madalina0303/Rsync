@@ -1,5 +1,5 @@
 from ftplib import FTP
-import parser
+from dateutil import parser
 
 class Ftp:
 
@@ -21,9 +21,9 @@ class Ftp:
         for file in files:
             timestamp = file[1]['modify']
             time = parser.parse(timestamp)
-            size = file[0]
-            print(self.path + ' - ' + str(time))
-            print(size)
+            size = file[1]["size"]
+            self.remote_file_info[file[0]]=(size,str(time))
+        return self.remote_file_info
 
     def changemon(self, dir='./'):
         # ls_prev = set()

@@ -15,13 +15,16 @@ def get_location(path1, path2):
         print(password)
         ftp_object = Ftp(server, name, password)
         ftp_object.conect()
+        print(ftp_object.get_info())
         #ftp_object.changemon()
         # for add, rem in self.changemon:
         #     print('\n'.join('+ %s' % i for i in add))
         #     print('\n'.join('- %s' % i for i in rem))
     if "folder" in path2: #daca este local folder, putem lua
-        localFolder = LocalFolder(path2)
-        localFolder.get_info()
+        split_path = path2.split(":")
+        local_path = split_path[1]+":"+split_path[2]
+        localFolder = LocalFolder(local_path)
+        print(localFolder.get_info())
 
 
 if __name__ == '__main__':
