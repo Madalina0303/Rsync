@@ -1,26 +1,8 @@
-from watchdog.observers import Observer
-from watchdog.events import LoggingEventHandler
-from watchdog.events import FileSystemEventHandler
-import logging
+import datetime
 import time
 import os
 from os import listdir
-from os.path import  isfile, join
-
-
-class _CustomHandler(FileSystemEventHandler):
-
-    def on_created(self, event):
-        print("HOPA TOPA PENELOPA ", event.src_path)
-
-    def on_deleted(self, event):
-        print("Se sterge ", event.src_path)
-
-    def on_modified(self, event):
-        print("Se modifica ", event.src_path)
-
-    def on_moved(self, event):
-        print("se muta ", event.src_path)
+from os.path import isfile, join, isdir
 
 
 class LocalFolder:
@@ -28,29 +10,43 @@ class LocalFolder:
         self.path = path
         self.local_file_info = {}
 
-    def startMonitoring(self):
-        logging.basicConfig(level=logging.INFO,
-                            format='%(asctime)s - %(message)s',
-                            datefmt='%Y-%m-%d %H:%M:%S')
-
-        event_handler = _CustomHandler()
-        observer = Observer()
-        observer.schedule(event_handler, self.path, recursive=True)
-        observer.start()
-        try:
-            while True:
-                time.sleep(1)
-        finally:
-            observer.stop()
-            observer.join()
-
-    def get_info(self):
-        for f in listdir(self.path):
-            full_path = join(self.path, f)
+    def get_info(self, path, compl_name=""):
+        for f in listdir(path):
+            full_path = join(path, f)
+            if compl_name:
+                k = compl_name + "\\" + f
+            else:
+                k = f
             if isfile(full_path):
-                size = os.path.getsize(full_path) # size in bytes/octeti
+                size = os.path.getsize(full_path)  # size in bytes/octeti
                 modTimesinceEpoc = os.path.getmtime(full_path)
                 modificationTime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(modTimesinceEpoc))
-                print("Last Modified Time : ", modificationTime)
-                self.local_file_info[f] = (size, modificationTime)
+                modificationTime = datetime.datetime.strptime(modificationTime, '%Y-%m-%d %H:%M:%S')
+                # print("Last Modified Time : ", type(modificationTime))
+                self.local_file_info[k] = ('file', size, modificationTime)
+
+            elif isdir(full_path):
+                self.local_file_info[k] = ('dir')
+                self.get_info(path=full_path, compl_name=f)
+
         return self.local_file_info
+
+    def get_content_file(self, name, callback):
+
+        full_path = self.path + "\\" + name
+        print(full_path)
+        with open(full_path, mode='rb') as f:
+            lines = f.readlines()
+            for line in lines:
+                callback(line)
+
+    def createFile(self, name, content, type_f):
+
+        full_path = self.path + "\\" + name
+        print("SE CREAAZA local un ", type_f, full_path, )
+        if "file" in type_f:
+            with open(full_path, "wb") as f:
+                f.write(content)
+                f.close()
+        elif 'dir' in type_f or type_f == 'd':
+            os.mkdir(full_path)
