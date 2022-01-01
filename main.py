@@ -105,6 +105,5 @@ if __name__ == '__main__':
         exit(1)
     initialSync = InitialSync()
     loc1, loc2 = initialSync.get_location(sys.argv[1], sys.argv[2])
-    # print(loc1)
-    # print(loc2)
     initialSync.compare_locations(loc1, loc2)
+
