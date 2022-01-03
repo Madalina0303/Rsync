@@ -3,7 +3,8 @@ import time
 from time import sleep
 from ftp import Ftp
 from localFolder import LocalFolder
-import datetime
+import datetime as dt
+from scheduler import schedule_sync
 
 
 class InitialSync:
@@ -11,6 +12,7 @@ class InitialSync:
         self.location1 = None
         self.location2 = None
         self.fileContent = None
+        self.current_status = None
 
     def get_location(self, path1, path2):
         if "ftp" in path1:
@@ -58,6 +60,15 @@ class InitialSync:
         else:
             self.FileContent = content
 
+    def create_file(self, model, where, key, type_f):
+        self.FileContent = None
+        if "file" in type_f:
+            model.get_content_file(key, self.saveFile)
+        where.createFile(key, self.FileContent, type_f)
+
+    def delete_file(self, location, name, type_f):
+        location.deleteFile(name, type_f)
+
     def compare_locations(self, loc1, loc2):
 
         for file in loc1:
@@ -98,6 +109,43 @@ class InitialSync:
                     print(self.location2.get_content_file(file, self.saveFile))
                     self.location1.createFile(file, self.FileContent, loc2[file][0])
 
+    def get_status_after_sync(self):
+        time = dt.datetime.now()
+        self.current_status = self.location1.get_info(self.location1.path)
+        for k in self.current_status:
+            if 'file' in self.current_status[k][0]:
+                self.current_status[k][2] = time
+        return self.current_status
+
+    def compare_folders(self):
+        dict1_info = self.location1.get_info(self.location1.path)
+        dict2_info = self.location2.get_info(self.location2.path)
+        #  ar putea fi cazuri in care directorul sa nu fie gol si sa apara eroare la stergere
+        # si abia mai apoi sa fie sterse si fisierele
+        # ar trebui stabilit o ordine sa fie mai intai in dictionar cheile cu file si abia apoi cele cu dir
+        # nu cred ca ordonarea ar fi neaparat cea mai buna solutie din cauza la createFile
+        # trebuie imbunatatit !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+        for k in dict1_info:
+            if k not in dict2_info and k not in self.current_status:  # trebuie creata intrarea si in loc2
+                self.create_file(self.location1, self.location2, k, dict1_info[k][0])
+            elif k not in dict2_info and k in self.current_status:  # s-a sters din locatia 2 trebuie sters si in locatia 1
+                self.delete_file(self.location1, k, dict1_info[k][0])
+            elif k in dict2_info and k in self.current_status and dict2_info[k][0] == 'file' and dict2_info[k][1] == \
+                    self.current_status[k][1] \
+                    and dict1_info[k][1] != self.current_status[k][
+                1]:  # loc1 a fost modificata, loc 2 trebuie actualizata
+                self.create_file(self.location1, self.location2, k, dict1_info[k][0])
+        for k in dict2_info:
+            if k not in dict1_info and k not in self.current_status:  # trebuie creata intrarea si in loc1
+                self.create_file(self.location2, self.location1, k, dict2_info[k][0])
+            elif k not in dict1_info and k in self.current_status:  # s-a sters din locatia 1 trebuie sters si in locatia 2
+                self.delete_file(self.location2, k, dict2_info[k][0])
+            elif k in dict1_info and k in self.current_status and dict1_info[k][0] == 'file' and dict1_info[k][1] == \
+                    self.current_status[k][1] \
+                    and dict2_info[k][1] != self.current_status[k][
+                1]:  # loc2 a fost modificata, loc 1 trebuie actualizata
+                self.create_file(self.location2, self.location1, k, dict2_info[k][0])
+
 
 if __name__ == '__main__':
     if len(sys.argv) <= 2:
@@ -106,4 +154,6 @@ if __name__ == '__main__':
     initialSync = InitialSync()
     loc1, loc2 = initialSync.get_location(sys.argv[1], sys.argv[2])
     initialSync.compare_locations(loc1, loc2)
-
+    # initialSync.get_status_after_sync()
+    sched = schedule_sync()
+    sched.start(initialSync.get_status_after_sync(), initialSync.compare_folders())

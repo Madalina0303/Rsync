@@ -51,3 +51,9 @@ class Ftp:
             self.ftp.storbinary(command, io.BytesIO(content))
         else:
             self.ftp.mkd(name)
+
+    def deleteFile(self, name, type_f):
+        if "file" in type_f:
+            self.ftp.delete(name)
+        else:
+            self.ftp.rmd(name)

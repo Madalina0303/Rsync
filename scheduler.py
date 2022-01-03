@@ -16,3 +16,7 @@ class schedule_sync:
                 time.wait(60)
             except KeyboardInterrupt:
                 break
+
+    def start(self, fct1, fct2):
+        self.scheduler.every(1).minutes.do(fct1)
+        self.scheduler.every(1).minutes.do(fct2)

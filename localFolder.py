@@ -2,7 +2,7 @@ import datetime
 import time
 import os
 from os import listdir
-from os.path import isfile, join, isdir
+from os.path import isfile, join, isdir, exists
 
 
 class LocalFolder:
@@ -50,3 +50,15 @@ class LocalFolder:
                 f.close()
         elif 'dir' in type_f or type_f == 'd':
             os.mkdir(full_path)
+
+    def deleteFile(self, name, type_f):
+        full_path = self.path + "\\" + name
+        if "file" in type_f:
+            if exists(full_path):
+                os.remove(full_path)
+        else:
+            # se pot sterge doar directoare goale
+            try:
+                os.rmdir(full_path)
+            except:
+                print("Dir not empty")
