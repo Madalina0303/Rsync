@@ -12,11 +12,12 @@ class Ftp:
         self.password = password
         self.remote_file_info = {}
         self.ftp = None
+        self.path = "./"
 
     def conect(self):
         # ftp = FTP('127.0.0.1', user='mspiridon', passwd="parola")
         # ftp.login(user="mspiridon",passwd="parola")
-        ftp = FTP(host=self.server, user=self.username, passwd=self.password, timeout= 1000)
+        ftp = FTP(host=self.server, user=self.username, passwd=self.password, timeout=1000)
         ftp.login(user=self.username, passwd=self.password)
         self.ftp = ftp
 

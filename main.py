@@ -24,7 +24,7 @@ class InitialSync:
             ftp_object.conect()
             # print(ftp_object.get_info())
             self.location1 = ftp_object
-            yield ftp_object.get_info()
+            yield ftp_object.get_info(ftp_object.path)
         elif "folder" in path1:
             split_path = path1.split(":")
             local_path = split_path[1] + ":" + split_path[2]
@@ -44,7 +44,7 @@ class InitialSync:
             ftp_object.conect()
             # print(ftp_object.get_info())
             self.location2 = ftp_object
-            yield ftp_object.get_info()
+            yield ftp_object.get_info(ftp_object.path)
         elif "folder" in path2:
             split_path = path2.split(":")
             local_path = split_path[1] + ":" + split_path[2]
@@ -80,7 +80,6 @@ class InitialSync:
                     self.location1.get_content_file(file, self.saveFile)
                 self.location2.createFile(file, self.FileContent, loc1[file][0])
             else:
-
 
                 # print("pentru file1- FTP", loc1[file])
                 # print("pentru file2- local folder", loc2[file])
@@ -132,7 +131,7 @@ class InitialSync:
 
     def compare_folders(self):
         print("Acuma intra pe comparat folderele")
-        dict1_info = self.location1.get_info()
+        dict1_info = self.location1.get_info(self.location1.path)
         dict2_info = self.location2.get_info(self.location2.path)
         print("Vechiul syncron ", self.current_status)
         print("Ce este in FTP1 ", dict1_info)
@@ -151,7 +150,8 @@ class InitialSync:
                 print("Sters in 1", k)
             elif k in dict2_info and k in self.current_status and dict2_info[k][0] == 'file' and dict2_info[k][1] == \
                     self.current_status[k][1] \
-                    and dict1_info[k][1] != self.current_status[k][1]:  # loc1 a fost modificata, loc 2 trebuie actualizata
+                    and dict1_info[k][1] != self.current_status[k][
+                1]:  # loc1 a fost modificata, loc 2 trebuie actualizata
                 self.create_file(self.location1, self.location2, k, dict1_info[k][0])
                 print("Modificcat in 2", k)
         for k in dict2_info:

@@ -6,20 +6,12 @@ import time
 
 class schedule_sync:
     def __init__(self):
-        # print("NIVLUCFG;")
         self.scheduler = schedule.Scheduler()
 
     def schedulerDaemon(self):
-        # print("SUNT BINEEEEEEEEEEEEEEE")
         while True:
             self.scheduler.run_pending()
-            # print("CONTEZ PENTRU MINE")
             time.sleep(1)
-            # except KeyboardInterrupt:
-            #     break
-
-    def ESB(self):
-        print("Ma jur ca voi fi bine")
 
     def start(self, fct1):
         # print("Ok", type(fct1))
@@ -29,6 +21,3 @@ class schedule_sync:
 
         print("Ok2")
         threading.Thread(target=self.schedulerDaemon(), daemon=True).start()
-        # while(True):
-        #     self.scheduler.run_pending()
-        #     time.sleep(1)
