@@ -43,10 +43,11 @@ class LocalFolder:
     def createFile(self, name, content, type_f):
 
         full_path = self.path + "\\" + name
-        print("SE CREAAZA local un ", type_f, full_path, )
+        # print("SE CREAAZA local un ", type_f, full_path, )
         if "file" in type_f:
             with open(full_path, "wb") as f:
-                f.write(content)
+                if content:
+                    f.write(content)
                 f.close()
         elif 'dir' in type_f or type_f == 'd':
             os.mkdir(full_path)

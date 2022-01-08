@@ -54,7 +54,7 @@ class InitialSync:
             # print(localFolder.get_info())
 
     def saveFile(self, content):
-        print("HOOPA TOPA2222", content, type(content))
+        # print("HOOPA TOPA2222", content, type(content))
         if self.FileContent:
             self.FileContent += content
         else:
@@ -72,15 +72,19 @@ class InitialSync:
     def compare_locations(self, loc1, loc2):
 
         for file in loc1:
-            print(loc1[file][0])
+            # print(loc1[file][0])
             if file not in loc2.keys():
-                print("In local folder se creeaza fisier pentru ca exista doar la ftp", file)
+                # print("In local folder se creeaza fisier pentru ca exista doar la ftp", file)
                 self.FileContent = None
                 if "file" in loc1[file][0]:
                     self.location1.get_content_file(file, self.saveFile)
                 self.location2.createFile(file, self.FileContent, loc1[file][0])
             else:
 
+
+                # print("pentru file1- FTP", loc1[file])
+                # print("pentru file2- local folder", loc2[file])
+                # print("Au size ul diferit, esti sigur ? ", loc1[file][1] != loc2[file][1])
                 if loc1[file][1] != loc2[file][1] and loc1[file][2] > loc2[file][2] and loc1[file][0] == 'file' and \
                         loc2[file][0] == 'file':
                     print("FTP", file, loc1[file][0], loc1[file][1]), loc1[file][2]
@@ -108,18 +112,31 @@ class InitialSync:
                     self.FileContent = None
                     print(self.location2.get_content_file(file, self.saveFile))
                     self.location1.createFile(file, self.FileContent, loc2[file][0])
+        self.current_status = self.location2.get_info(self.location2.path).copy()
 
     def get_status_after_sync(self):
+        print("Dupa  sync este in felul urmator, acuma sunt la fel")
+        self.current_status = None
         time = dt.datetime.now()
-        self.current_status = self.location1.get_info(self.location1.path)
+        self.current_status = self.location2.get_info(self.location2.path).copy()
         for k in self.current_status:
             if 'file' in self.current_status[k][0]:
-                self.current_status[k][2] = time
+                lst = list(self.current_status[k])
+                # print(self.current_status[k][2])
+                lst[0] = self.current_status[k][0]
+                lst[1] = self.current_status[k][1]
+                lst[2] = time
+                self.current_status[k] = tuple(lst)
+        print(self.current_status)
         return self.current_status
 
     def compare_folders(self):
-        dict1_info = self.location1.get_info(self.location1.path)
+        print("Acuma intra pe comparat folderele")
+        dict1_info = self.location1.get_info()
         dict2_info = self.location2.get_info(self.location2.path)
+        print("Vechiul syncron ", self.current_status)
+        print("Ce este in FTP1 ", dict1_info)
+        print("Ce este in folderul local ", dict2_info)
         #  ar putea fi cazuri in care directorul sa nu fie gol si sa apara eroare la stergere
         # si abia mai apoi sa fie sterse si fisierele
         # ar trebui stabilit o ordine sa fie mai intai in dictionar cheile cu file si abia apoi cele cu dir
@@ -128,23 +145,33 @@ class InitialSync:
         for k in dict1_info:
             if k not in dict2_info and k not in self.current_status:  # trebuie creata intrarea si in loc2
                 self.create_file(self.location1, self.location2, k, dict1_info[k][0])
+                print("Create in 2", k)
             elif k not in dict2_info and k in self.current_status:  # s-a sters din locatia 2 trebuie sters si in locatia 1
                 self.delete_file(self.location1, k, dict1_info[k][0])
+                print("Sters in 1", k)
             elif k in dict2_info and k in self.current_status and dict2_info[k][0] == 'file' and dict2_info[k][1] == \
                     self.current_status[k][1] \
-                    and dict1_info[k][1] != self.current_status[k][
-                1]:  # loc1 a fost modificata, loc 2 trebuie actualizata
+                    and dict1_info[k][1] != self.current_status[k][1]:  # loc1 a fost modificata, loc 2 trebuie actualizata
                 self.create_file(self.location1, self.location2, k, dict1_info[k][0])
+                print("Modificcat in 2", k)
         for k in dict2_info:
             if k not in dict1_info and k not in self.current_status:  # trebuie creata intrarea si in loc1
                 self.create_file(self.location2, self.location1, k, dict2_info[k][0])
+                print("Create in 1")
             elif k not in dict1_info and k in self.current_status:  # s-a sters din locatia 1 trebuie sters si in locatia 2
                 self.delete_file(self.location2, k, dict2_info[k][0])
+                print("Sters in 2", k)
             elif k in dict1_info and k in self.current_status and dict1_info[k][0] == 'file' and dict1_info[k][1] == \
                     self.current_status[k][1] \
                     and dict2_info[k][1] != self.current_status[k][
                 1]:  # loc2 a fost modificata, loc 1 trebuie actualizata
                 self.create_file(self.location2, self.location1, k, dict2_info[k][0])
+                print("Modificat in 1", k)
+
+        self.get_status_after_sync()
+
+        print("Acuma a  terminat, iata syncron ", self.current_status)
+        # self.current_status["Prezent"] ="Prezent"
 
 
 if __name__ == '__main__':
@@ -155,5 +182,7 @@ if __name__ == '__main__':
     loc1, loc2 = initialSync.get_location(sys.argv[1], sys.argv[2])
     initialSync.compare_locations(loc1, loc2)
     # initialSync.get_status_after_sync()
+    # print(initialSync.current_status)
     sched = schedule_sync()
-    sched.start(initialSync.get_status_after_sync(), initialSync.compare_folders())
+    sched.start(initialSync.compare_folders)
+    sched.start()

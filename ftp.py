@@ -16,13 +16,14 @@ class Ftp:
     def conect(self):
         # ftp = FTP('127.0.0.1', user='mspiridon', passwd="parola")
         # ftp.login(user="mspiridon",passwd="parola")
-        ftp = FTP(host=self.server, user=self.username, passwd=self.password)
+        ftp = FTP(host=self.server, user=self.username, passwd=self.password, timeout= 1000)
         ftp.login(user=self.username, passwd=self.password)
         self.ftp = ftp
 
     def get_info(self, path="./", concaten=""):
         # print(concaten)
         files = self.ftp.mlsd(path)
+        # print("BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA HAII ODATA", files)
         for file in files:
             try:
                 # print(file)
@@ -31,7 +32,7 @@ class Ftp:
                 timestamp = file[1]['modify']
                 time = parser.parse(timestamp) + datetime.timedelta(hours=2)
                 if "file" in type_f:
-                    size = file[1]["size"]
+                    size = int(file[1]["size"])
                     self.remote_file_info[concaten + file[0]] = (type_f, size, time)
                 if type_f == "dir":
                     self.remote_file_info[concaten + file[0]] = (type_f)
