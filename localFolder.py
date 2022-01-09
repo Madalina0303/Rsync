@@ -17,6 +17,7 @@ class LocalFolder:
 
                 k = compl_name + "\\" + f
             else:
+
                 k = f
             if isfile(full_path):
                 size = os.path.getsize(full_path)  # size in bytes/octeti
