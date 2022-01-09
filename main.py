@@ -163,8 +163,7 @@ class InitialSync:
                 print("Sters in 2", k)
             elif k in dict1_info and k in self.current_status and dict1_info[k][0] == 'file' and dict1_info[k][1] == \
                     self.current_status[k][1] \
-                    and dict2_info[k][1] != self.current_status[k][
-                1]:  # loc2 a fost modificata, loc 1 trebuie actualizata
+                    and dict2_info[k][1] != self.current_status[k][1]:  # loc2 a fost modificata, loc 1 trebuie actualizata
                 self.create_file(self.location2, self.location1, k, dict2_info[k][0])
                 print("Modificat in 1", k)
 

@@ -14,6 +14,7 @@ class LocalFolder:
         for f in listdir(path):
             full_path = join(path, f)
             if compl_name:
+
                 k = compl_name + "\\" + f
             else:
                 k = f
