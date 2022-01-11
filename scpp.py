@@ -4,6 +4,7 @@ from scp import SCPClient
 import os
 import datetime as dt
 import spur
+import shutil
 
 
 class SCP:
@@ -24,8 +25,9 @@ class SCP:
         self.client.connect(self.server, self.port, self.user, self.password)
         self.scp = SCPClient(self.client.get_transport())
 
-
     def get_info(self, path):
+        shutil.rmtree("scp")
+        self.scp_info={}
         self.scp.get(".", local_path="scp", recursive=True, preserve_times=True)
         for root, dirs, files in os.walk("scp"):
             for name in files:
@@ -45,22 +47,31 @@ class SCP:
         return self.scp_info
 
     def get_content_file(self, file_name, callback):
+
         for root, dirs, files in os.walk("scp"):
             for name in files:
                 name = os.path.join(root, name)
-                if file_name == name:
-                    with open(file_name, mode='rb') as f:
+                print("NUMELE LA CONTENT FILE", name)
+                if file_name == name.split("\\", 1)[1]:
+                    with open(name, mode='rb') as f:
                         callback(f.read())
 
-    def createFile(self, name, content, type_f):
+    def createFile(self, name, short_name, type_f):
         # content poate fi None
-        self.scp.put(name, remote_path=name)
+        name_s = short_name.replace("\\", "/")
+        if type_f == 'file':
+            self.scp.put(name, remote_path=name_s)
+        else:
+            self.client.exec_command('mkdir -p  ' + short_name)
 
     def close(self):
         self.scp.close()
 
     def deleteFile(self, name, type_f=None):
-        self.client.exec_command('rm -rf  ' + name)
+        # if type_f == 'dir':
+        #     os.rmdir("scp\\" + name)
+        nou = name.replace("\\", "/")
+        self.client.exec_command('rm -rf  ' +nou )
 
 
 if __name__ == '__main__':

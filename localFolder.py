@@ -43,7 +43,7 @@ class LocalFolder:
                 callback(line)
 
     def createFile(self, name, content, type_f):
-
+        print("IN LOCAL FOLDER VREA SA CREEZE ",name , "CU URM CONTENT", content, " si este ", type_f)
         full_path = self.path + "\\" + name
         # print("SE CREAAZA local un ", type_f, full_path, )
         if "file" in type_f:

@@ -67,11 +67,11 @@ class Zip:
         name = file_name
         # name = file_name.split("\\", 2)[2]
         # name = name.replace("\\", "/")
-        # if type_f == 'file':
-        with ZipFile(self.path + ".zip", 'a') as myzip:
-            with myzip.open(name, 'w') as f:
-                if content:
-                    f.write(content.encode())
+        if type_f == 'file':
+            with ZipFile(self.path + ".zip", 'a') as myzip:
+                with myzip.open(name, 'w') as f:
+                    if content:
+                        f.write(content.encode())
 
     def deleteFile(self, file_name, type_f):
         name = file_name

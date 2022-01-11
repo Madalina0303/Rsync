@@ -133,11 +133,14 @@ class InitialSync:
         else:
             self.FileContent = content
 
-    def create_file(self, model, where, key, type_f):
+    def create_file(self, model, where, key, type_f, scp=None):
         self.FileContent = None
-        if "file" in type_f:
-            model.get_content_file(key, self.saveFile)
-        where.createFile(key, self.FileContent, type_f)
+        if scp:
+            where.createFile(key, scp, type_f)
+        else:
+            if "file" in type_f:
+                model.get_content_file(key, self.saveFile)
+            where.createFile(key, self.FileContent, type_f)
 
     def delete_file(self, location, name, type_f):
         location.deleteFile(name, type_f)
@@ -151,10 +154,13 @@ class InitialSync:
                 self.FileContent = None
                 if "file" in loc1[file][0]:
                     self.location1.get_content_file(file, self.saveFile)
-                if "scp" in self.type1:
-                    file = self.location2.path+"/"+loc1[file][0]
+                if "SCP" in self.type2:
+                    file_ok = self.location2.path + "/" + file
+                    self.location2.createFile(file_ok, file, loc1[file][0])
+                else:
+                    file_ok = file
 
-                self.location2.createFile(file, self.FileContent, loc1[file][0])
+                    self.location2.createFile(file_ok, self.FileContent, loc1[file][0])
             else:
 
                 # print("pentru file1- FTP", loc1[file])
@@ -179,12 +185,16 @@ class InitialSync:
                 if "file" in loc2[file][0]:
                     self.location2.get_content_file(file, self.saveFile)
                 # print("HOOPA TOPA ", self.FileContent, type(self.FileContent))
-                if loc1 == "scp":
-                    file_ok = self.location2.path+"/"+loc2[file][0]
+                if self.type1 == "SCP":
+                    print("HELOOUUUUUUUUUU")
+                    file_ok = self.location2.path + "\\" + file
+                    print("BUNA DIMINEATA", file_ok)
+                    # in loc de content ca oricum nu avem nevoie sa dam asa cum trebuie la remote path
+                    self.location1.createFile(file_ok, file, loc2[file][0])
                 else:
-                    file_ok = loc2[file][0]
-                print("FILE-OK", file_ok)
-                self.location1.createFile(file, self.FileContent, file_ok)
+                    file_ok = file
+                    print("FILE-OK", file_ok)
+                    self.location1.createFile(file_ok, self.FileContent, loc2[file][0])
 
             else:
 
@@ -222,8 +232,8 @@ class InitialSync:
         dict1_info = self.location1.get_info(self.location1.path)
         dict2_info = self.location2.get_info(self.location2.path)
         # print("Vechiul syncron ", self.current_status)
-        print("Ce este in FTP1 ", dict1_info)
-        print("Ce este in folderul local ", dict2_info)
+        print(f"Ce este in {self.type1} ", dict1_info)
+        print(f"Ce este in {self.type2} ", dict2_info)
         #  ar putea fi cazuri in care directorul sa nu fie gol si sa apara eroare la stergere
         # si abia mai apoi sa fie sterse si fisierele
         # ar trebui stabilit o ordine sa fie mai intai in dictionar cheile cu file si abia apoi cele cu dir
@@ -231,11 +241,12 @@ class InitialSync:
         # trebuie imbunatatit !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
         for k in dict1_info:
             if k not in dict2_info and k not in self.current_status:  # trebuie creata intrarea si in loc2
-                if "scp" in self.type2:
-                    file = self.location1.path + "/" + file
+                if "SCP" in self.type2:
+                    file_ok = self.location1.path + "/" + k
+                    self.create_file(self.location1, self.location2, file_ok, dict1_info[k][0], scp=k)
                 else:
-                    file = dict1_info[k][0]
-                self.create_file(self.location1, self.location2, k, file)
+                    file_ok = k
+                    self.create_file(self.location1, self.location2, file_ok, dict1_info[k][0])
                 print(f"Create in {self.type2}", k)
             elif k not in dict2_info and k in self.current_status:  # s-a sters din locatia 2 trebuie sters si in locatia 1
                 try:
@@ -251,7 +262,13 @@ class InitialSync:
                     self.current_status[k][1] \
                     and dict1_info[k][1] != self.current_status[k][
                 1]:  # loc1 a fost modificata, loc 2 trebuie actualizata
-                self.create_file(self.location1, self.location2, k, dict1_info[k][0])
+
+                if "SCP" in self.type2:
+                    file_ok = self.location1.path + "/" + k
+                    self.create_file(self.location1, self.location2, file_ok, dict1_info[k][0], scp=k)
+                else:
+                    file_ok = k
+                    self.create_file(self.location1, self.location2, file_ok, dict1_info[k][0])
                 print(f"Modificcat in {self.type2}", k)
 
         if param1 != None and param2 != None and param3 != None:
@@ -261,11 +278,12 @@ class InitialSync:
             param3 = None
         for k in dict2_info:
             if k not in dict1_info and k not in self.current_status:  # trebuie creata intrarea si in loc1
-                if "scp" in self.type1:
-                    file = self.location2.path + "/" + file
+                if "SCP" in self.type1:
+                    file_ok = self.location2.path + "/" + k
+                    self.create_file(self.location2, self.location1, file_ok, dict2_info[k][0], scp=k)
                 else:
-                    file = dict2_info[k][0]
-                self.create_file(self.location2, self.location1, k, dict2_info[k][0])
+                    file_ok = k
+                    self.create_file(self.location2, self.location1, file_ok, dict2_info[k][0])
                 print(f"Create in {self.type1}")
             elif k not in dict1_info and k in self.current_status:  # s-a sters din locatia 1 trebuie sters si in locatia 2
                 try:
@@ -280,7 +298,12 @@ class InitialSync:
                     self.current_status[k][1] \
                     and dict2_info[k][1] != self.current_status[k][
                 1]:  # loc2 a fost modificata, loc 1 trebuie actualizata
-                self.create_file(self.location2, self.location1, k, dict2_info[k][0])
+                if "SCP" in self.type1:
+                    file_ok = self.location2.path + "/" + k
+                    self.create_file(self.location2, self.location1, file_ok, dict2_info[k][0], scp=k)
+                else:
+                    file_ok = k
+                    self.create_file(self.location2, self.location1, file_ok, dict2_info[k][0])
                 print(f"Modificat in {self.type1}", k)
 
         if param1 and param2 and param3:
@@ -301,6 +324,8 @@ if __name__ == '__main__':
     # log_file = open("info.log", 'w')
     # sys.stdout = sys.stderr = log_file
     initialSync = InitialSync()
+    print(sys.argv[1])
+    print(sys.argv[2])
     loc1, loc2 = initialSync.get_location(sys.argv[1], sys.argv[2])
     print(loc1)
     print(loc2)
