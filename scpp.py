@@ -15,6 +15,7 @@ class SCP:
         self.client = None
         self.scp = None
         self.scp_info = {}
+        self.path = "."
 
     def connect(self):
         self.client = paramiko.SSHClient()
@@ -22,6 +23,7 @@ class SCP:
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy)
         self.client.connect(self.server, self.port, self.user, self.password)
         self.scp = SCPClient(self.client.get_transport())
+
 
     def get_info(self, path):
         self.scp.get(".", local_path="scp", recursive=True, preserve_times=True)
@@ -39,6 +41,8 @@ class SCP:
                 name = os.path.join(root, name)
                 name_dict = name.split("\\", 1)[1]
                 self.scp_info[name_dict] = ('dir')
+
+        return self.scp_info
 
     def get_content_file(self, file_name, callback):
         for root, dirs, files in os.walk("scp"):
@@ -62,6 +66,6 @@ class SCP:
 if __name__ == '__main__':
     scpObj = SCP("students.info.uaic.ro", 22, "madalina.spiridon", "AAAbbbMMM303SSS")
     scpObj.connect()
-    # scpObj.get_info()
-    scpObj.deleteFile("python", "dir")
-    # print(scpObj.scp_info)
+    scpObj.get_info('.')
+    # scpObj.deleteFile("python", "dir")
+    print(scpObj.scp_info)

@@ -21,13 +21,22 @@ class Zip:
             # print(zip.infolist())
             for info in zip.infolist():
                 if info.is_dir():
-                    self.zip_info[info.filename] = {'dir'}
+                    self.zip_info[info.filename] = ('dir')
                     # self.get_info_file(path=self.path + "\\" + info.filename[:-1])
                     # print(info.file_size)
                     # print(info.date_time)
                     # print(info.compress_size)
                 else:
-                    self.zip_info[info.filename] = {'file', info.file_size, info.date_time}
+                    print(info.date_time)
+                    year = info.date_time[0]
+                    month = info.date_time[1]
+                    day = info.date_time[2]
+                    h = info.date_time[3]
+                    m = info.date_time[4]
+                    s = info.date_time[5]
+                    self.zip_info[info.filename] = ('file', info.file_size,
+                                                    datetime.datetime(year=year, month=month, day=day, hour=h, minute=m,
+                                                                      second=s))
 
         return self.zip_info
 
@@ -86,9 +95,9 @@ class Zip:
 
 if __name__ == '__main__':
     zp = Zip("D:\\an3\\python\\FolderZip")
-    zp.get_info()
+    zp.get_info('.')
     # zp.get_info_file("D:\\multimi\\multimi\\obj")
     print(zp.zip_info)
     # zp.createFile("ajutor.txt", "Ceva", 'file')
-    zp.deleteFile("FolderZip/mllll.txt", 'file')
+    # zp.get_info("FolderZip/mllll.txt", 'file')
     # zp.get_content_file("FolderZip/gol/")

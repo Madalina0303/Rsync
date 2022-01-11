@@ -27,7 +27,7 @@ class InitialSync:
         return server, name, password
 
     def get_scp_connection_info(self, path):
-        server = path.split("@")[1][:-1]
+        server = path.split("@")[1]
         aux = path.split(":")
         name = aux[1].strip()
         password = aux[2].strip()
@@ -37,8 +37,9 @@ class InitialSync:
 
     def is_zip(self, path, contor):
         split_path = path.split(":")
-        zip_path = split_path[1].split('.')[0]
-        print(zip_path)
+        print(split_path)
+        zip_path = split_path[1] + ":" + split_path[2].split('.')[0]
+        print("IA TE UITE", zip_path)
         zipF = Zip(zip_path)
         if contor == 1:
             self.location1 = zipF
@@ -71,7 +72,11 @@ class InitialSync:
             self.type2 = "FOLDER"
 
     def is_scp(self, path, contor):
-        server, name, password, port = self.get_scp_connection_info(self, path)
+        server, name, password, port = self.get_scp_connection_info(path)
+        print(server)
+        print(name)
+        print(password)
+        print(port)
         scp = SCP(server, port, name, password)
         scp.connect()
         if contor == 1:
@@ -92,7 +97,12 @@ class InitialSync:
             yield self.location1.get_info(self.location1.path)
 
         elif "zip" in path1:
+            print(path1)
             self.is_zip(path1, 1)
+            yield self.location1.get_info(self.location1.path)
+        elif "scp" in path1:
+            print(path1)
+            self.is_scp(path1, 1)
             yield self.location1.get_info(self.location1.path)
 
         if "ftp" in path2:
@@ -102,6 +112,7 @@ class InitialSync:
             self.is_folder(path2, 2)
             yield self.location2.get_info(self.location2.path)
         elif "zip" in path2:
+            print(path2)
             self.is_zip(path2, 2)
             yield self.location2.get_info(self.location2.path)
             # split_path = path2.split(":")
@@ -111,6 +122,10 @@ class InitialSync:
             # self.location1 = zipF
             # yield zipF.get_info(zipF.path)
             # self.type2 = "ZIP"
+        elif "scp" in path2:
+            print(path2)
+            self.is_scp(path2, 2)
+            yield self.location1.get_info(self.location2.path)
 
     def saveFile(self, content):
         if self.FileContent:
@@ -136,6 +151,9 @@ class InitialSync:
                 self.FileContent = None
                 if "file" in loc1[file][0]:
                     self.location1.get_content_file(file, self.saveFile)
+                if "scp" in self.type1:
+                    file = self.location2.path+"/"+loc1[file][0]
+
                 self.location2.createFile(file, self.FileContent, loc1[file][0])
             else:
 
@@ -161,7 +179,12 @@ class InitialSync:
                 if "file" in loc2[file][0]:
                     self.location2.get_content_file(file, self.saveFile)
                 # print("HOOPA TOPA ", self.FileContent, type(self.FileContent))
-                self.location1.createFile(file, self.FileContent, loc2[file][0])
+                if loc1 == "scp":
+                    file_ok = self.location2.path+"/"+loc2[file][0]
+                else:
+                    file_ok = loc2[file][0]
+                print("FILE-OK", file_ok)
+                self.location1.createFile(file, self.FileContent, file_ok)
 
             else:
 
@@ -171,6 +194,7 @@ class InitialSync:
                           loc2[file][0])
                     self.FileContent = None
                     print(self.location2.get_content_file(file, self.saveFile))
+
                     self.location1.createFile(file, self.FileContent, loc2[file][0])
         self.current_status = self.location2.get_info(self.location2.path).copy()
 
@@ -207,7 +231,11 @@ class InitialSync:
         # trebuie imbunatatit !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
         for k in dict1_info:
             if k not in dict2_info and k not in self.current_status:  # trebuie creata intrarea si in loc2
-                self.create_file(self.location1, self.location2, k, dict1_info[k][0])
+                if "scp" in self.type2:
+                    file = self.location1.path + "/" + file
+                else:
+                    file = dict1_info[k][0]
+                self.create_file(self.location1, self.location2, k, file)
                 print(f"Create in {self.type2}", k)
             elif k not in dict2_info and k in self.current_status:  # s-a sters din locatia 2 trebuie sters si in locatia 1
                 try:
@@ -233,6 +261,10 @@ class InitialSync:
             param3 = None
         for k in dict2_info:
             if k not in dict1_info and k not in self.current_status:  # trebuie creata intrarea si in loc1
+                if "scp" in self.type1:
+                    file = self.location2.path + "/" + file
+                else:
+                    file = dict2_info[k][0]
                 self.create_file(self.location2, self.location1, k, dict2_info[k][0])
                 print(f"Create in {self.type1}")
             elif k not in dict1_info and k in self.current_status:  # s-a sters din locatia 1 trebuie sters si in locatia 2
