@@ -22,7 +22,10 @@ class Ftp:
         self.ftp = ftp
 
     def get_info(self, path="./", concaten=""):
+        if concaten == "":
+            self.remote_file_info = {}
         # print(concaten)
+
         files = self.ftp.mlsd(path)
         # print("BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA HAII ODATA", files)
         for file in files:
@@ -32,12 +35,16 @@ class Ftp:
                 # print(type)
                 timestamp = file[1]['modify']
                 time = parser.parse(timestamp) + datetime.timedelta(hours=2)
+                if "./" == path:
+                    concaten1 = file[0]
+                else:
+                    concaten1 = path + "\\" + file[0]
                 if "file" in type_f:
                     size = int(file[1]["size"])
                     self.remote_file_info[concaten + file[0]] = (type_f, size, time)
                 if type_f == "dir":
                     self.remote_file_info[concaten + file[0]] = (type_f)
-                    self.get_info(path=path + "\\" + file[0], concaten=file[0] + "\\")
+                    self.get_info(path=concaten1, concaten=concaten1 + "\\")
             except:
                 print("Nu are toate campurile")
 
@@ -57,5 +64,10 @@ class Ftp:
     def deleteFile(self, name, type_f):
         if "file" in type_f:
             self.ftp.delete(name)
+            # self.remote_file_info.pop(name, None)
         else:
+            # try:
             self.ftp.rmd(name)
+            # self.remote_file_info.pop(name, None)
+            # except:
+            #     print("Directory not empty")

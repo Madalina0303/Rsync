@@ -12,7 +12,7 @@ class Zip:
         self.zip_info = {}
         self.cont = {}
 
-    def get_info(self):
+    def get_info(self, path):
 
         with ZipFile(self.path + ".zip", 'r') as zip:
 
@@ -46,13 +46,13 @@ class Zip:
                 self.zip_info[full_path] = ('dir')
                 self.get_info_file(path=full_path)
 
-    def get_content_file(self, file_name):
+    def get_content_file(self, file_name, callback):
         # name = file_name.split("\\", 2)[2]
         # name = name.replace("\\", "/")
         name = file_name
         with ZipFile(self.path + ".zip", 'r') as zip:
             with zip.open(name) as f:
-                print(f.read())
+                callback(f.read())
 
     def createFile(self, file_name, content=None, type_f=None):
         name = file_name

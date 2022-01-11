@@ -32,16 +32,16 @@ class SFTP:
     def unknow_file(self):
         print("Unknow file type")
 
-    def get_info(self):
+    def get_info(self, path):
         self.sftp.walktree('.', self.fill_info_file, self.fill_info_dir, self.unknow_file)
 
-    def get_content_file(self, filename):
+    def get_content_file(self, filename, callback):
         local_path = "sftp" + filename.split("/", 1)[1]
         self.sftp.get(filename, local_path)
         with open(local_path, mode='rb') as f:
-            return f.read()
+            callback(f.read())
 
-    def createFile(self, filename, type):
+    def createFile(self, filename, content, type):
         if type == 'dir':
             self.sftp.mkdir(filename)
         else:

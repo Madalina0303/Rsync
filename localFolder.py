@@ -11,13 +11,13 @@ class LocalFolder:
         self.local_file_info = {}
 
     def get_info(self, path, compl_name=""):
+        if compl_name == "":
+            self.local_file_info = {}
         for f in listdir(path):
             full_path = join(path, f)
-            if compl_name:
-
+            if compl_name != "":
                 k = compl_name + "\\" + f
             else:
-
                 k = f
             if isfile(full_path):
                 size = os.path.getsize(full_path)  # size in bytes/octeti
@@ -29,7 +29,7 @@ class LocalFolder:
 
             elif isdir(full_path):
                 self.local_file_info[k] = ('dir')
-                self.get_info(path=full_path, compl_name=f)
+                self.get_info(path=full_path, compl_name=k)
 
         return self.local_file_info
 
@@ -59,9 +59,8 @@ class LocalFolder:
         if "file" in type_f:
             if exists(full_path):
                 os.remove(full_path)
+                # self.local_file_info.pop(name,None)
         else:
             # se pot sterge doar directoare goale
-            try:
                 os.rmdir(full_path)
-            except:
-                print("Dir not empty")
+                # self.local_file_info.pop(name,None)

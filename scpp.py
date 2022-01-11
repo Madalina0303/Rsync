@@ -23,7 +23,7 @@ class SCP:
         self.client.connect(self.server, self.port, self.user, self.password)
         self.scp = SCPClient(self.client.get_transport())
 
-    def get_info(self):
+    def get_info(self, path):
         self.scp.get(".", local_path="scp", recursive=True, preserve_times=True)
         for root, dirs, files in os.walk("scp"):
             for name in files:
@@ -40,13 +40,13 @@ class SCP:
                 name_dict = name.split("\\", 1)[1]
                 self.scp_info[name_dict] = ('dir')
 
-    def get_content_file(self, file_name):
+    def get_content_file(self, file_name, callback):
         for root, dirs, files in os.walk("scp"):
             for name in files:
                 name = os.path.join(root, name)
                 if file_name == name:
                     with open(file_name, mode='rb') as f:
-                        return f.read()
+                        callback(f.read())
 
     def createFile(self, name, content, type_f):
         # content poate fi None
