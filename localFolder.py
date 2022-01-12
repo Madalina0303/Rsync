@@ -7,10 +7,23 @@ from os.path import isfile, join, isdir, exists
 
 class LocalFolder:
     def __init__(self, path):
+        """
+         Constructorul clasei LocalFolder
+         :param str path: path ul catre fisierul local
+         :returns: None
+
+        """
         self.path = path
         self.local_file_info = {}
 
     def get_info(self, path, compl_name=""):
+        """
+         Se obtine un dictionar cu informartii despre fisierele si folderele existente la path ul dat
+         :param str path: path ul directorului pentru care se doreste obtinerea de informatii
+         :param str compl_name: parametru optional pentru a fi concatenat cu primul parametru si a se obtine un path complet in cazul apelarii recursive
+         :returns: (dict) dictionar cu informatii despre tip, size si timpul modificarii
+
+        """
         if compl_name == "":
             self.local_file_info = {}
         for f in listdir(path):
@@ -34,6 +47,14 @@ class LocalFolder:
         return self.local_file_info
 
     def get_content_file(self, name, callback):
+        """
+         Obtinerea continutului unui fisier
+
+         :param str name: numele fisierului
+         :param function callback: functie callback care sa fie apelata la fiecare bloc citit din fisier
+         :returns: None
+
+        """
 
         full_path = self.path + "\\" + name
         print(full_path)
@@ -43,9 +64,16 @@ class LocalFolder:
                 callback(line)
 
     def createFile(self, name, content, type_f):
-        print("IN LOCAL FOLDER VREA SA CREEZE ",name , "CU URM CONTENT", content, " si este ", type_f)
+        """
+        Creerea unui fisier sau director
+
+         :param str name: numele fisierului/directorului
+         :param str content: continutul fisierului
+         :param str type_f: daca este fisier sau folder
+         :returns: None
+
+        """
         full_path = self.path + "\\" + name
-        # print("SE CREAAZA local un ", type_f, full_path, )
         if "file" in type_f:
             with open(full_path, "wb") as f:
                 if content:
@@ -55,12 +83,19 @@ class LocalFolder:
             os.mkdir(full_path)
 
     def deleteFile(self, name, type_f):
+        """
+        Stergerea unui fisier sau director
+
+         :param str name: numele fisierului/directorului
+         :param str type_f: daca este fisier sau folder
+         :returns: None
+
+        """
         full_path = self.path + "\\" + name
         if "file" in type_f:
             if exists(full_path):
                 os.remove(full_path)
-                # self.local_file_info.pop(name,None)
+
         else:
             # se pot sterge doar directoare goale
-                os.rmdir(full_path)
-                # self.local_file_info.pop(name,None)
+            os.rmdir(full_path)

@@ -1,6 +1,4 @@
 import sys
-import time
-from time import sleep
 from ftp import Ftp
 from localFolder import LocalFolder
 import datetime as dt
@@ -9,16 +7,30 @@ from zip import Zip
 from scpp import SCP
 from secureftp import SFTP
 
+
 class InitialSync:
     def __init__(self):
+        """
+         Constructorul clasei de sincronizare
+         :returns: None
+
+        """
         self.location1 = None
         self.location2 = None
         self.fileContent = None
         self.current_status = None
         self.type1 = None
         self.type2 = None
+        self.FileContent = None
 
     def get_ftp_connection_info(self, path):
+        """
+        Prelucreaza stringul primit ca parametru pentru a extrage numele utilizatorului,parola si adresa hostului
+
+        :param str path: path ul catre o locatie de tip ftp
+        :returns: (tuple) serverul, numele si parola
+
+        """
         server = path.split("@")[1][:-1]
         aux = path.split(":")
         name = aux[1].strip()
@@ -27,6 +39,14 @@ class InitialSync:
         return server, name, password
 
     def get_sftp_connection_info(self, path):
+
+        """
+        Prelucreaza stringul primit ca parametru pentru a extrage numele utilizatorului,parola si adresa hostului
+
+        :param str path: path ul catre o locatie de tip sftp
+        :returns: (tuple) serverul, numele si parola
+
+        """
         server = path.split("@")[1]
         aux = path.split(":")
         name = aux[1].strip()
@@ -35,28 +55,49 @@ class InitialSync:
         return server, name, password
 
     def get_scp_connection_info(self, path):
+        """
+        Prelucreaza stringul primit ca parametru pentru a extrage numele utilizatorului,parola, adresa si portul hostului
+
+        :param str path: path ul catre o locatie remote
+        :returns: (tuple) serverul, numele, parola si portul
+
+        """
         server = path.split("@")[1]
         aux = path.split(":")
         name = aux[1].strip()
         password = aux[2].strip()
-        port = aux[3].split("@")[0]
+        port = int(aux[3].split("@")[0])
 
         return server, name, password, port
 
     def is_zip(self, path, contor):
+        """
+        Se apeleaza constructorul clasei Zip si se initializeaza atributele location respectiv type
+
+        :param str path: path ul catre o locatie de tip zip
+        :param int contor: indica daca este prima sau a doua locatie/tip, 1 pentru locatia1/tip1 , 2 pentru locatia2/tip2
+        :returns: None
+
+        """
         split_path = path.split(":")
-        print(split_path)
         zip_path = split_path[1] + ":" + split_path[2].split('.')[0]
-        print("IA TE UITE", zip_path)
-        zipF = Zip(zip_path)
+        zip_f = Zip(zip_path)
         if contor == 1:
-            self.location1 = zipF
+            self.location1 = zip_f
             self.type1 = "ZIP"
         else:
-            self.location2 = zipF
+            self.location2 = zip_f
             self.type2 = "ZIP"
 
     def is_ftp(self, path, contor):
+        """
+        Se apeleaza constructorul clasei Ftp si se initializeaza atributele location respectiv type
+
+        :param str path: path ul catre o locatie de tip ftp
+        :param int contor: indica daca este prima sau a doua locatie/tip, 1 pentru locatia1/tip1 , 2 pentru locatia2/tip2
+        :returns: None
+
+        """
         server, name, password = self.get_ftp_connection_info(path)
         ftp_object = Ftp(server, name, password)
         ftp_object.conect()
@@ -68,10 +109,15 @@ class InitialSync:
             self.type2 = "FTP"
 
     def is_sftp(self, path, contor):
+        """
+        Se apeleaza constructorul clasei Sftp si se initializeaza atributele location respectiv type
+
+        :param str path: path ul catre o locatie de tip sftp
+        :param int contor: indica daca este prima sau a doua locatie/tip, 1 pentru locatia1/tip1 , 2 pentru locatia2/tip2
+        :returns: None
+
+        """
         server, name, password = self.get_sftp_connection_info(path)
-        print(server)
-        print(name)
-        print(password)
         sftp_object = SFTP(server, name, password)
         if contor == 1:
             self.location1 = sftp_object
@@ -81,23 +127,34 @@ class InitialSync:
             self.type2 = "SFTP"
 
     def is_folder(self, path, contor):
+        """
+        Se apeleaza constructorul clasei LocalFolder si se initializeaza atributele location respectiv type
+
+        :param str path: path ul catre un folder local
+        :param int contor: indica daca este prima sau a doua locatie/tip, 1 pentru locatia1/tip1 , 2 pentru locatia2/tip2
+        :returns: None
+
+        """
         split_path = path.split(":")
         local_path = split_path[1] + ":" + split_path[2]
-        print(local_path)
-        localFolder = LocalFolder(local_path)
+        local_folder = LocalFolder(local_path)
         if contor == 1:
-            self.location1 = localFolder
+            self.location1 = local_folder
             self.type1 = "FOLDER"
         else:
-            self.location2 = localFolder
+            self.location2 = local_folder
             self.type2 = "FOLDER"
 
     def is_scp(self, path, contor):
+        """
+        Se apeleaza constructorul clasei Scp si se initializeaza atributele location respectiv type
+
+        :param str path: path ul catre o locatie remote
+        :param int contor: indica daca este prima sau a doua locatie/tip, 1 pentru locatia1/tip1 , 2 pentru locatia2/tip2
+        :returns: None
+
+        """
         server, name, password, port = self.get_scp_connection_info(path)
-        print(server)
-        print(name)
-        print(password)
-        print(port)
         scp = SCP(server, port, name, password)
         scp.connect()
         if contor == 1:
@@ -108,8 +165,19 @@ class InitialSync:
             self.type2 = "SCP"
 
     def get_location(self, path1, path2):
+        """
+        Se obtin informatii despre tipul, size ul si data ultimii modificari a fisierelor/folderelor din fiecare locatie
+        :param str path1: path ul catre o locatie ce trebuie sincronizata
+        :param str path2: path ul catre a doua locatie
+        :returns: (tuple) 2 dictionare cu informatii
 
-        if "ftp" == path1:
+        """
+
+        if "sftp" in path1:
+            self.is_sftp(path1, 1)
+            yield self.location1.get_info(self.location1.path)
+
+        elif "ftp" in path1:
             self.is_ftp(path1, 1)
             yield self.location1.get_info(self.location1.path)
 
@@ -118,69 +186,90 @@ class InitialSync:
             yield self.location1.get_info(self.location1.path)
 
         elif "zip" in path1:
-            print(path1)
             self.is_zip(path1, 1)
             yield self.location1.get_info(self.location1.path)
         elif "scp" in path1:
-            print(path1)
             self.is_scp(path1, 1)
             yield self.location1.get_info(self.location1.path)
-        if "sftp" in path1:
-            self.is_sftp(path1, 1)
-            yield self.location1.get_info(self.location1.path)
 
-        if "ftp" == path2:
-            self.is_ftp(path2, 2)
+        if "sftp" in path2:
+            self.is_sftp(path2, 2)
             yield self.location2.get_info(self.location2.path)
         elif "folder" in path2:
             self.is_folder(path2, 2)
             yield self.location2.get_info(self.location2.path)
         elif "zip" in path2:
-            print(path2)
             self.is_zip(path2, 2)
             yield self.location2.get_info(self.location2.path)
-            # split_path = path2.split(":")
-            # zip_path = split_path[1].split('.')[0]
-            # print(zip_path)
-            # zipF = Zip(zip_path)
-            # self.location1 = zipF
-            # yield zipF.get_info(zipF.path)
-            # self.type2 = "ZIP"
         elif "scp" in path2:
-            print(path2)
             self.is_scp(path2, 2)
             yield self.location1.get_info(self.location2.path)
-        if "sftp" in path2:
+        elif "ftp" in path2:
             self.is_ftp(path2, 1)
             yield self.location2.get_info(self.location1.path)
 
-    def saveFile(self, content):
+    def save_file(self, content):
+        """
+        Se salveaza continutul unui fisier
+
+        :param str content: o parte din continutul unui fisier
+        :returns: None
+
+        """
+
         if self.FileContent:
             self.FileContent += content
         else:
             self.FileContent = content
 
     def create_file(self, model, where, key, type_f, supl=None):
+        """
+        Se obtine continutul fisierului daca este cazul si apeleaza functia createFile corespunzatoare fiecarei clase
+
+        :param LocalFolder/Zip/Sftp/Ftp/Scp model: locatia care detine fisierul
+        :param LocalFolder/Zip/Sftp/Ftp/Scp where: locatia in care trebuie creat fisierul
+        :param str key: numele fisierului/directorului de creat
+        :param str type_f: daca este fisier sau director
+        :param string supl: parametru optional care indica denumirea cu care sa fie creat fisierul pentru Sftp si Scp
+        :returns: None
+
+        """
         self.FileContent = None
         if supl:
             where.createFile(key, supl, type_f)
         else:
             if "file" in type_f:
-                model.get_content_file(key, self.saveFile)
+                model.get_content_file(key, self.save_file)
             where.createFile(key, self.FileContent, type_f)
 
     def delete_file(self, location, name, type_f):
+        """
+        Se sterge fisierul/folderul din locatia data
+
+        :param LocalFolder/Zip/Sftp/Ftp/Scp location: locatia din care se sterge
+        :param str name: numele fisierului/folderului
+        :param str type_f: daca este fisier sau director
+        :returns: None
+
+        """
         location.deleteFile(name, type_f)
 
     def compare_locations(self, loc1, loc2):
+        """
+        Sincronizarea initiala dintre cele 2 locatii
+
+        :param LocalFolder/Zip/Sftp/Ftp/Scp loc1: prima dintre locatiele ce trebuie sincronizata
+        :param LocalFolder/Zip/Sftp/Ftp/Scp loc2: a doua dintre locatiele ce trebuie sincronizata
+        :returns: None
+
+        """
 
         for file in loc1:
-            # print(loc1[file][0])
             if file not in loc2.keys():
                 print(f"In {self.type2} se creeaza fisier/folder pentru ca exista doar la {self.type1}", file)
                 self.FileContent = None
                 if "file" in loc1[file][0]:
-                    self.location1.get_content_file(file, self.saveFile)
+                    self.location1.get_content_file(file, self.save_file)
                 if "SCP" in self.type2 or "SFTP" in self.type2:
                     file_ok = self.location2.path + "/" + file
                     self.location2.createFile(file_ok, file, loc1[file][0])
@@ -190,19 +279,13 @@ class InitialSync:
                     self.location2.createFile(file_ok, self.FileContent, loc1[file][0])
             else:
 
-                # print("pentru file1- FTP", loc1[file])
-                # print("pentru file2- local folder", loc2[file])
-                # print("Au size ul diferit, esti sigur ? ", loc1[file][1] != loc2[file][1])
-                if loc1[file][1] != loc2[file][1] and loc1[file][2] > loc2[file][2] and loc1[file][0] == 'file' and \
-                        loc2[file][0] == 'file':
-                    # print("FTP", file, loc1[file][0], loc1[file][1]), loc1[file][2]
-                    # print("LOCAL", file, loc2[file][0], loc2[file][1], loc2[file][2])
+                if loc1[file][1] != loc2[file][1] and loc1[file][2] > loc2[file][2] and loc1[file][0] == 'file' and loc2[file][0] == 'file':
                     print(f"In {self.type2} se modifica fisier/folder pentru ca exista  modificari la {self.type1}",
                           file,
                           loc1[file][1],
                           loc2[file][1])
                     self.FileContent = None
-                    self.location1.get_content_file(file, self.saveFile)
+                    self.location1.get_content_file(file, self.save_file)
                     if "SCP" in self.type2 or "SFTP" in self.type2:
                         file_ok = self.location2.path + "/" + file
                         self.location2.createFile(file_ok, file, loc1[file][0])
@@ -210,19 +293,19 @@ class InitialSync:
                         file_ok = file
                         self.location2.createFile(file_ok, self.FileContent, loc1[file][0])
 
-
         for file in loc2:
             if file not in loc1.keys():
                 print(f"In {self.type1} se creaza folder/fisier pentru ca nu exista in {self.type2}", file)
                 self.FileContent = None
                 if "file" in loc2[file][0]:
-                    self.location2.get_content_file(file, self.saveFile)
-                # print("HOOPA TOPA ", self.FileContent, type(self.FileContent))
+                    self.location2.get_content_file(file, self.save_file)
                 if self.type1 == "SCP" or self.type1 == "SFTP":
-                    # print("HELOOUUUUUUUUUU")
                     file_ok = self.location2.path + "\\" + file
-                    # print("BUNA DIMINEATA", file_ok, loc2[file])
-                    # in loc de content ca oricum nu avem nevoie sa dam asa cum trebuie la remote path
+                    if self.type2 == "ZIP":
+                        file_ok = self.location2.path + ".zip\\" + file
+                    else:
+                        file_ok = self.location2.path + "\\" + file
+
                     self.location1.createFile(file_ok, file, loc2[file][0])
                 else:
                     file_ok = file
@@ -236,20 +319,24 @@ class InitialSync:
                           file, loc1[file][0],
                           loc2[file][0])
                     self.FileContent = None
-                    self.location2.get_content_file(file, self.saveFile)
+                    self.location2.get_content_file(file, self.save_file)
                     if self.type1 == "SCP" or self.type1 == "SFTP":
                         file_ok = self.location2.path + "\\" + file
                         self.location1.createFile(file_ok, file, loc2[file][0])
                     else:
                         file_ok = file
-                        # print("FILE-OK", file_ok)
+
                         self.location1.createFile(file_ok, self.FileContent, loc2[file][0])
 
-                    # self.location1.createFile(file, self.FileContent, loc2[file][0])
         self.current_status = self.location2.get_info(self.location2.path).copy()
 
     def get_status_after_sync(self):
-        # print("Dupa  sync este in felul urmator, acuma sunt la fel")
+        """
+        Statusul cu cele doua locatii sincronizate
+        :returns: (dict) un dictionar cu info despre fisierele comune
+
+        """
+
         self.current_status = None
         time = dt.datetime.now()
         self.current_status = self.location2.get_info(self.location2.path).copy()
@@ -265,20 +352,19 @@ class InitialSync:
         return self.current_status
 
     def compare_folders(self):
+        """
+        Se compara si apoi se sincronizeaza cele 2 locatii daca exista diferente
+        :returns: None
+
+        """
         param1 = None
         param2 = None
         param3 = None
         print("Incepe  compararea locatiilor")
         dict1_info = self.location1.get_info(self.location1.path)
         dict2_info = self.location2.get_info(self.location2.path)
-        # print("Vechiul syncron ", self.current_status)
         print(f"Ce este in {self.type1} ", dict1_info)
         print(f"Ce este in {self.type2} ", dict2_info)
-        #  ar putea fi cazuri in care directorul sa nu fie gol si sa apara eroare la stergere
-        # si abia mai apoi sa fie sterse si fisierele
-        # ar trebui stabilit o ordine sa fie mai intai in dictionar cheile cu file si abia apoi cele cu dir
-        # nu cred ca ordonarea ar fi neaparat cea mai buna solutie din cauza la createFile
-        # trebuie imbunatatit !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
         for k in dict1_info:
             if k not in dict2_info and k not in self.current_status:  # trebuie creata intrarea si in loc2
                 if "SCP" in self.type2 or "SFTP" in self.type2:
@@ -300,8 +386,7 @@ class InitialSync:
 
             elif k in dict2_info and k in self.current_status and dict2_info[k][0] == 'file' and dict2_info[k][1] == \
                     self.current_status[k][1] \
-                    and dict1_info[k][1] != self.current_status[k][
-                1]:  # loc1 a fost modificata, loc 2 trebuie actualizata
+                    and dict1_info[k][1] != self.current_status[k][1]:  # loc1 a fost modificata, loc 2 trebuie actualizata
 
                 if "SCP" in self.type2 or "SFTP" in self.type2:
                     file_ok = self.location1.path + "/" + k
@@ -311,7 +396,7 @@ class InitialSync:
                     self.create_file(self.location1, self.location2, file_ok, dict1_info[k][0])
                 print(f"Modificcat in {self.type2}", k)
 
-        if param1 != None and param2 != None and param3 != None:
+        if param1 and param2 and param3:
             self.delete_file(param1, param2, param3)
             param1 = None
             param2 = None
@@ -336,8 +421,8 @@ class InitialSync:
                     param3 = dict2_info[k][0]
             elif k in dict1_info and k in self.current_status and dict1_info[k][0] == 'file' and dict1_info[k][1] == \
                     self.current_status[k][1] \
-                    and dict2_info[k][1] != self.current_status[k][
-                1]:  # loc2 a fost modificata, loc 1 trebuie actualizata
+                    and dict2_info[k][1] != self.current_status[k][1]:
+                # loc2 a fost modificata, loc 1 trebuie actualizata
                 if "SCP" in self.type1 or "SFTP" in self.type1:
                     file_ok = self.location2.path + "/" + k
                     self.create_file(self.location2, self.location1, file_ok, dict2_info[k][0], supl=k)
@@ -353,9 +438,6 @@ class InitialSync:
             param3 = None
         self.get_status_after_sync()
 
-        # print("Acuma a  terminat, iata syncron ", self.current_status)
-        # self.current_status["Prezent"] ="Prezent"
-
 
 if __name__ == '__main__':
     if len(sys.argv) <= 2:
@@ -364,14 +446,7 @@ if __name__ == '__main__':
     # log_file = open("info.log", 'w')
     # sys.stdout = sys.stderr = log_file
     initialSync = InitialSync()
-    print(sys.argv[1])
-    print(sys.argv[2])
     loc1, loc2 = initialSync.get_location(sys.argv[1], sys.argv[2])
-    print(loc1)
-    print(loc2)
     initialSync.compare_locations(loc1, loc2)
-    # initialSync.get_status_after_sync()
-    # print(initialSync.current_status)
     sched = schedule_sync()
     sched.start(initialSync.compare_folders)
-    sched.start()

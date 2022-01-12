@@ -7,6 +7,14 @@ from dateutil import parser
 class Ftp:
 
     def __init__(self, server="localhost", username="", password=""):
+        """
+         Constructorul clasei FTP
+         :param str server: serverul ftp
+         :param str username: numele utilizatorului
+         :param str password: parola
+         :returns: None
+
+        """
         self.server = server
         self.username = username
         self.password = password
@@ -15,19 +23,28 @@ class Ftp:
         self.path = "./"
 
     def conect(self):
-        # ftp = FTP('127.0.0.1', user='mspiridon', passwd="parola")
-        # ftp.login(user="mspiridon",passwd="parola")
+        """
+        Conectarea la serverul Ftp
+        :returns: None
+
+        """
         ftp = FTP(host=self.server, user=self.username, passwd=self.password, timeout=1000)
         ftp.login(user=self.username, passwd=self.password)
         self.ftp = ftp
 
     def get_info(self, path="./", concaten=""):
+        """
+         Se obtine un dictionar cu fisierele si folderele existente la path ul dat
+         :param str path: path ul directorului pentru care se doreste obtinerea de informatii
+         :param str concaten: parametru optional pentru a fi concatenat cu primul parametru si a se obtine un path complet in cazul apelarii recursive
+         :returns: (dict) dictionar cu informatii despre tip, size si timpul modificarii
+
+        """
+
         if concaten == "":
             self.remote_file_info = {}
-        # print(concaten)
 
         files = self.ftp.mlsd(path)
-        # print("BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA HAII ODATA", files)
         for file in files:
             try:
                 # print(file)
@@ -51,10 +68,27 @@ class Ftp:
         return self.remote_file_info
 
     def get_content_file(self, file_name, fct):
+        """
+         Obtinerea continutului unui fisier
+
+         :param str file_name: numele fisierului
+         :param function fct: functie callback care sa fie apelata la fiecare bloc citit din fisier
+         :returns: None
+
+        """
         command = "RETR " + file_name
         self.ftp.retrbinary(command, callback=fct)
 
     def createFile(self, name, content, type_f):
+        """
+        Creerea unui fisier sau director
+
+         :param str name: numele fisierului/directorului
+         :param str content: continutul care sa fie salvat in cadrul fisierului
+         :param str type_f: daca este fisier sau folder
+         :returns: None
+
+        """
         if "file" in type_f:
             command = "STOR " + name
             self.ftp.storbinary(command, io.BytesIO(content))
@@ -62,12 +96,15 @@ class Ftp:
             self.ftp.mkd(name)
 
     def deleteFile(self, name, type_f):
+        """
+        Stergerea unui fisier sau director
+
+         :param str name: numele fisierului/directorului
+         :param str type_f: daca este fisier sau folder
+         :returns: None
+
+        """
         if "file" in type_f:
             self.ftp.delete(name)
-            # self.remote_file_info.pop(name, None)
         else:
-            # try:
             self.ftp.rmd(name)
-            # self.remote_file_info.pop(name, None)
-            # except:
-            #     print("Directory not empty")
