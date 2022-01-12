@@ -7,7 +7,7 @@ import datetime as dt
 from scheduler import schedule_sync
 from zip import Zip
 from scpp import SCP
-
+from secureftp import SFTP
 
 class InitialSync:
     def __init__(self):
@@ -20,6 +20,14 @@ class InitialSync:
 
     def get_ftp_connection_info(self, path):
         server = path.split("@")[1][:-1]
+        aux = path.split(":")
+        name = aux[1].strip()
+        password = aux[2].split("@")[0]
+
+        return server, name, password
+
+    def get_sftp_connection_info(self, path):
+        server = path.split("@")[1]
         aux = path.split(":")
         name = aux[1].strip()
         password = aux[2].split("@")[0]
@@ -59,6 +67,19 @@ class InitialSync:
             self.location2 = ftp_object
             self.type2 = "FTP"
 
+    def is_sftp(self, path, contor):
+        server, name, password = self.get_sftp_connection_info(path)
+        print(server)
+        print(name)
+        print(password)
+        sftp_object = SFTP(server, name, password)
+        if contor == 1:
+            self.location1 = sftp_object
+            self.type1 = "SFTP"
+        else:
+            self.location2 = sftp_object
+            self.type2 = "SFTP"
+
     def is_folder(self, path, contor):
         split_path = path.split(":")
         local_path = split_path[1] + ":" + split_path[2]
@@ -88,7 +109,7 @@ class InitialSync:
 
     def get_location(self, path1, path2):
 
-        if "ftp" in path1:
+        if "ftp" == path1:
             self.is_ftp(path1, 1)
             yield self.location1.get_info(self.location1.path)
 
@@ -104,8 +125,11 @@ class InitialSync:
             print(path1)
             self.is_scp(path1, 1)
             yield self.location1.get_info(self.location1.path)
+        if "sftp" in path1:
+            self.is_sftp(path1, 1)
+            yield self.location1.get_info(self.location1.path)
 
-        if "ftp" in path2:
+        if "ftp" == path2:
             self.is_ftp(path2, 2)
             yield self.location2.get_info(self.location2.path)
         elif "folder" in path2:
@@ -126,6 +150,9 @@ class InitialSync:
             print(path2)
             self.is_scp(path2, 2)
             yield self.location1.get_info(self.location2.path)
+        if "sftp" in path2:
+            self.is_ftp(path2, 1)
+            yield self.location2.get_info(self.location1.path)
 
     def saveFile(self, content):
         if self.FileContent:
@@ -133,10 +160,10 @@ class InitialSync:
         else:
             self.FileContent = content
 
-    def create_file(self, model, where, key, type_f, scp=None):
+    def create_file(self, model, where, key, type_f, supl=None):
         self.FileContent = None
-        if scp:
-            where.createFile(key, scp, type_f)
+        if supl:
+            where.createFile(key, supl, type_f)
         else:
             if "file" in type_f:
                 model.get_content_file(key, self.saveFile)
@@ -154,7 +181,7 @@ class InitialSync:
                 self.FileContent = None
                 if "file" in loc1[file][0]:
                     self.location1.get_content_file(file, self.saveFile)
-                if "SCP" in self.type2:
+                if "SCP" in self.type2 or "SFTP" in self.type2:
                     file_ok = self.location2.path + "/" + file
                     self.location2.createFile(file_ok, file, loc1[file][0])
                 else:
@@ -176,7 +203,13 @@ class InitialSync:
                           loc2[file][1])
                     self.FileContent = None
                     self.location1.get_content_file(file, self.saveFile)
-                    self.location2.createFile(file, self.FileContent, loc1[file][0])
+                    if "SCP" in self.type2 or "SFTP" in self.type2:
+                        file_ok = self.location2.path + "/" + file
+                        self.location2.createFile(file_ok, file, loc1[file][0])
+                    else:
+                        file_ok = file
+                        self.location2.createFile(file_ok, self.FileContent, loc1[file][0])
+
 
         for file in loc2:
             if file not in loc1.keys():
@@ -185,10 +218,10 @@ class InitialSync:
                 if "file" in loc2[file][0]:
                     self.location2.get_content_file(file, self.saveFile)
                 # print("HOOPA TOPA ", self.FileContent, type(self.FileContent))
-                if self.type1 == "SCP":
-                    print("HELOOUUUUUUUUUU")
+                if self.type1 == "SCP" or self.type1 == "SFTP":
+                    # print("HELOOUUUUUUUUUU")
                     file_ok = self.location2.path + "\\" + file
-                    print("BUNA DIMINEATA", file_ok)
+                    # print("BUNA DIMINEATA", file_ok, loc2[file])
                     # in loc de content ca oricum nu avem nevoie sa dam asa cum trebuie la remote path
                     self.location1.createFile(file_ok, file, loc2[file][0])
                 else:
@@ -203,9 +236,16 @@ class InitialSync:
                           file, loc1[file][0],
                           loc2[file][0])
                     self.FileContent = None
-                    print(self.location2.get_content_file(file, self.saveFile))
+                    self.location2.get_content_file(file, self.saveFile)
+                    if self.type1 == "SCP" or self.type1 == "SFTP":
+                        file_ok = self.location2.path + "\\" + file
+                        self.location1.createFile(file_ok, file, loc2[file][0])
+                    else:
+                        file_ok = file
+                        # print("FILE-OK", file_ok)
+                        self.location1.createFile(file_ok, self.FileContent, loc2[file][0])
 
-                    self.location1.createFile(file, self.FileContent, loc2[file][0])
+                    # self.location1.createFile(file, self.FileContent, loc2[file][0])
         self.current_status = self.location2.get_info(self.location2.path).copy()
 
     def get_status_after_sync(self):
@@ -241,9 +281,9 @@ class InitialSync:
         # trebuie imbunatatit !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
         for k in dict1_info:
             if k not in dict2_info and k not in self.current_status:  # trebuie creata intrarea si in loc2
-                if "SCP" in self.type2:
+                if "SCP" in self.type2 or "SFTP" in self.type2:
                     file_ok = self.location1.path + "/" + k
-                    self.create_file(self.location1, self.location2, file_ok, dict1_info[k][0], scp=k)
+                    self.create_file(self.location1, self.location2, file_ok, dict1_info[k][0], supl=k)
                 else:
                     file_ok = k
                     self.create_file(self.location1, self.location2, file_ok, dict1_info[k][0])
@@ -263,9 +303,9 @@ class InitialSync:
                     and dict1_info[k][1] != self.current_status[k][
                 1]:  # loc1 a fost modificata, loc 2 trebuie actualizata
 
-                if "SCP" in self.type2:
+                if "SCP" in self.type2 or "SFTP" in self.type2:
                     file_ok = self.location1.path + "/" + k
-                    self.create_file(self.location1, self.location2, file_ok, dict1_info[k][0], scp=k)
+                    self.create_file(self.location1, self.location2, file_ok, dict1_info[k][0], supl=k)
                 else:
                     file_ok = k
                     self.create_file(self.location1, self.location2, file_ok, dict1_info[k][0])
@@ -278,9 +318,9 @@ class InitialSync:
             param3 = None
         for k in dict2_info:
             if k not in dict1_info and k not in self.current_status:  # trebuie creata intrarea si in loc1
-                if "SCP" in self.type1:
+                if "SCP" in self.type1 or "SFTP" in self.type1:
                     file_ok = self.location2.path + "/" + k
-                    self.create_file(self.location2, self.location1, file_ok, dict2_info[k][0], scp=k)
+                    self.create_file(self.location2, self.location1, file_ok, dict2_info[k][0], k)
                 else:
                     file_ok = k
                     self.create_file(self.location2, self.location1, file_ok, dict2_info[k][0])
@@ -298,9 +338,9 @@ class InitialSync:
                     self.current_status[k][1] \
                     and dict2_info[k][1] != self.current_status[k][
                 1]:  # loc2 a fost modificata, loc 1 trebuie actualizata
-                if "SCP" in self.type1:
+                if "SCP" in self.type1 or "SFTP" in self.type1:
                     file_ok = self.location2.path + "/" + k
-                    self.create_file(self.location2, self.location1, file_ok, dict2_info[k][0], scp=k)
+                    self.create_file(self.location2, self.location1, file_ok, dict2_info[k][0], supl=k)
                 else:
                     file_ok = k
                     self.create_file(self.location2, self.location1, file_ok, dict2_info[k][0])
